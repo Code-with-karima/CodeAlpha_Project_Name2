@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Professional To-Do List</title>
+  <style>
+    /* Dynamic Gradient Background */
+    body {
+      font-family: 'Roboto', sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      background: linear-gradient(45deg, #ff9a9e, #fad0c4, #fbc2eb, #a1c4fd, #c2e9fb);
+      background-size: 400% 400%;
+      animation: gradientBG 15s ease infinite;
+    }
+
+    @keyframes gradientBG {
+      0% { background-position: 0% 50%; }
+      50% { background-position: 100% 50%; }
+      100% { background-position: 0% 50%; }
+    }
+
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      border-radius: 15px;
+      padding: 25px;
+      max-width: 600px;
+      width: 90%;
+      box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+    }
+
+    h1 {
+      text-align: center;
+      color: #333;
+      font-size: 2rem;
+      margin-bottom: 15px;
+    }
+
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 15px;
+    }
+
+    input, select {
+      flex: 1;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+
+    #dueDate {
+      max-width: 150px;
+    }
+
+    button {
+      background: #4caf50;
+      color: white;
+      border: none;
+      padding: 10px 15px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #45a049;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    li {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+      margin-bottom: 10px;
+      padding: 10px;
+    }
+
+    .tags {
+      display: flex;
+      gap: 5px;
+    }
+
+    .tags span {
+      background: #007bff;
+      color: white;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-size: 0.8rem;
+    }
+
+    .progress-bar {
+      height: 20px;
+      background: #ddd;
+      border-radius: 10px;
+      overflow: hidden;
+      margin-bottom: 15px;
+    }
+
+    .progress-bar div {
+      height: 100%;
+      background: #4caf50;
+      width: 0%;
+      text-align: center;
+      color: white;
+      font-size: 0.8rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>To-Do List</h1>
+    <div class="progress-bar">
+      <div id="progress">0%</div>
+    </div>
+    <div class="controls">
+      <input type="text" id="taskInput" placeholder="Add your task..." />
+      <select id="tags">
+        <option value="Work">Work</option>
+        <option value="Personal">Personal</option>
+        <option value="Shopping">Shopping</option>
+      </select>
+      <input type="date" id="dueDate" />
+      <button onclick="addTask()">Add Task</button>
+    </div>
+    <ul id="taskList"></ul>
+    <button onclick="clearTasks()">Clear All</button>
+    <button onclick="exportTasks()">Export to CSV</button>
+    <button onclick="toggleBackground()">Toggle Background</button>
+  </div>
+
+  <script>
+    let tasks = [];
+    const taskInput = document.getElementById("taskInput");
+    const taskList = document.getElementById("taskList");
+    const tags = document.getElementById("tags");
+    const dueDate = document.getElementById("dueDate");
+    const progressBar = document.getElementById("progress");
+    let isGradient = true;
+
+    // Add Task
+    function addTask() {
+      const taskText = taskInput.value.trim();
+      if (!taskText) {
+        alert("Please enter a task!");
+        return;
+      }
+
+      const newTask = {
+        id: Date.now(),
+        text: taskText,
+        tag: tags.value,
+        due: dueDate.value || "No due date",
+        completed: false,
+      };
+
+      tasks.push(newTask);
+      taskInput.value = "";
+      updateUI();
+    }
+
+    // Update UI
+    function updateUI() {
+      taskList.innerHTML = "";
+      tasks.forEach((task) => {
+        const li = document.createElement("li");
+        li.innerHTML = `
+          <div>
+            <strong>${task.text}</strong>
+            <div class="tags">
+              <span>${task.tag}</span>
+              <span>${task.due}</span>
+            </div>
+          </div>
+          <button onclick="toggleComplete(${task.id})">✔</button>
+          <button onclick="removeTask(${task.id})" style="background: #f44336; color: white;">X</button>
+        `;
+        taskList.appendChild(li);
+      });
+      updateProgress();
+    }
+
+    // Toggle Completion
+    function toggleComplete(id) {
+      tasks = tasks.map((task) =>
+        task.id === id ? { ...task, completed: !task.completed } : task
+      );
+      updateUI();
+    }
+
+    // Remove Task
+    function removeTask(id) {
+      tasks = tasks.filter((task) => task.id !== id);
+      updateUI();
+    }
+
+    // Update Progress
+    function updateProgress() {
+      const completed = tasks.filter((task) => task.completed).length;
+      const total = tasks.length;
+      const percent = total ? Math.round((completed / total) * 100) : 0;
+      progressBar.style.width = `${percent}%`;
+      progressBar.textContent = `${percent}%`;
+    }
+
+    // Clear All Tasks
+    function clearTasks() {
+      tasks = [];
+      updateUI();
+    }
+
+    // Export Tasks to CSV
+    function exportTasks() {
+      if (!tasks.length) {
+        alert("No tasks to export!");
+        return;
+      }
+
+      const csvContent =
+        "data:text/csv;charset=utf-8," +
+        tasks
+          .map((task) => `${task.text},${task.tag},${task.due},${task.completed}`)
+          .join("\n");
+
+          const link = document.createElement("a");
+      link.setAttribute("href", encodeURI(csvContent));
+      link.setAttribute("download", "tasks.csv");
+      link.click();
+    }
+
+    // Toggle Background
+    function toggleBackground() {
+      if (isGradient) {
+        document.body.style.background = "black";
+        document.body.style.animation = "none";
+      } else {
+        document.body.style.background = 
+        document.body.style.background = 
+        document.body.style.background = 
+      "linear-gradient(45deg, #ff9a9e, #fad0c4, #fbc2eb, #a1c4fd, #c2e9fb)";
+ document.body.style.animation = "gradientBG 3s ease infinite";
+      }
+      isGradient = !isGradient;
+    }
+  </script>
+</body>
+</html>
